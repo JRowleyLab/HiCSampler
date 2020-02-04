@@ -1,1 +1,1 @@
-# hic_subber
+# HiCSampler
