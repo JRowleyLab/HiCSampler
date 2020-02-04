@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
 import numpy as np
 import argparse
 import gzip
@@ -30,9 +24,6 @@ randnorm = lambda read : np.random.poisson(int(read),1)[0]
 "np_randnorm" is a function created to broadcast the "randnorm" function on a NumPy array.
 '''
 np_randnorm = np.frompyfunc(randnorm,1,1)
-
-
-# In[ ]:
 
 
 class HiCPSN:
@@ -63,10 +54,6 @@ class HiCPSN:
         del ele
         del straw_result
 
-
-# In[ ]:
-
-
 class HiCSampler:
     '''
     "HiCSampler" is used for randomly assiging the reads from the poisson distribution in each cell in the matrix.
@@ -74,7 +61,7 @@ class HiCSampler:
     the results are copied to the lower triangular half. The diagonals with different offests are extracted using the 
     "kdiag" function. Random assignment of reads from the poisson distribution to these diagonal elements is performed 
     using the "np_randnorm" function. To remove the effects of the 1 added to the matrix, the matrix is subtracted by the
-    vlue of the "ratio".
+    value of the "ratio".
     '''
     def __init__(self, straw_result, chrom, chrsize, ratio=1.0, res=50000):
         self.hicpsn = HiCPSN(straw_result, chrom, ratio, res, chrsize)
@@ -106,10 +93,6 @@ class HiCSampler:
                 if score < 1:
                     continue
                 yield '{0} {1} {2} {3} {4} {5} {6} {7} {8}'.format(str1, chr1, pos1, frag1, str2, chr2, pos2, frag2, score)
-
-
-# In[ ]:
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
