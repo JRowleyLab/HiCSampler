@@ -139,9 +139,6 @@ if __name__ == '__main__':
                         f.write('\n')
             print("Processed Chromosome: ", chrm[0])
     
-    '''
-    To parse through the short score format files
-    '''
     elif args.sht_scr_dir:
         for chrfile in os.listdir(args.sht_scr_dir):
             result0 = list(); result1 = list(); result2 = list(); result = list()
