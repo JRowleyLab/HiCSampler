@@ -106,6 +106,10 @@ if __name__ == '__main__':
     parser.add_argument('--res', dest='res', default = 50000, metavar='int', help="Resolution to process the Hi-C file")
     parser.add_argument('-g', dest='gzip', action='store_true', help="Output is gzipped")
     args = parser.parse_args()
+    
+    if args.hic_file == None and args.size:
+        parser.error("Enter chromosome size file -s, if input is HiC file -i")
+
     print("Entered Inputs: ", args.hic_file, args.sht_scr_dir, args.output, args.size, args.ratio, args.res)
     
     '''
@@ -122,8 +126,11 @@ if __name__ == '__main__':
         
         for chrm in sizels:
             print("Inputs to straw ",'NONE', args.hic_file, chrm[0], chrm[0], 'BP', args.res)
-            result = straw('NONE', args.hic_file, chrm[0], chrm[0], 'BP', int(args.res))
-            print("Processing Chromosome: ", chrm[0])
+            try:
+                result = straw('NONE', args.hic_file, chrm[0], chrm[0], 'BP', int(args.res))
+                print("Processing Chromosome: ", chrm[0])
+            except:
+                print(f"Error in processing chromosome {chrm[0]}")
             mixer = HiCSampler(result, int(chrm[0]), ratio=float(args.ratio), res=int(args.res), chrsize=int(chrm[1]))
             file = args.output+"/chr"+chrm[0]
 
