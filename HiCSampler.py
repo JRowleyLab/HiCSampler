@@ -70,7 +70,7 @@ class HiCSampler:
         for col in range(self.hicpsn.ncols):
             tmp = np_randnorm(np.diag(self.hicpsn.observed, col))
             self.hicpsn.observed[kdiag(self.hicpsn.ncols, col)] = tmp
-            self.hicpsn.observed[kdiag(self.hicpsn.ncols, -col)] = tmp
+            #self.hicpsn.observed[kdiag(self.hicpsn.ncols, -col)] = tmp
         print("Random Poisson distribution assigned for chromosome: ", self.chrom)
         if ratio > 1:
             self.hicpsn.observed = self.hicpsn.observed-ratio
