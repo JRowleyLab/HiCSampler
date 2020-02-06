@@ -131,7 +131,7 @@ if __name__ == '__main__':
                 print("Processing Chromosome: ", chrm[0])
             except:
                 print(f"Error in processing chromosome {chrm[0]}")
-            mixer = HiCSampler(result, int(chrm[0]), ratio=float(args.ratio), res=int(args.res), chrsize=int(chrm[1]))
+            mixer = HiCSampler(result, chrm[0], ratio=float(args.ratio), res=int(args.res), chrsize=int(chrm[1]))
             file = args.output+"/chr"+chrm[0]
 
             if args.gzip:
@@ -156,7 +156,7 @@ if __name__ == '__main__':
                     result0.append(int(line_values[2]))
                     result1.append(int(line_values[6]))
                     result2.append(int(float(line_values[8])))
-                    chrom = int(line_values[1])
+                    chrom = line_values[1]
             chrsize = max(max(result0), max(result1))
             result.append(result0); result.append(result1); result.append(result2)
             print("Processing Chromosome: ", chrom)
