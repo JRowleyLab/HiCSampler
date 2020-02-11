@@ -3,6 +3,7 @@ import argparse
 import gzip
 import os
 from straw import straw
+from itertools import repeat
 
 def kdiag(mat_dim, offset):
     '''
@@ -17,14 +18,20 @@ def kdiag(mat_dim, offset):
     else:
         return row_idx,col_idx
 '''
-"randnorm" is a function used to create a poisson distribution, centered around the varaible "read".
+"randpsn" is a function used to create a poisson distribution, centered around the varaible "read".
 '''
-randnorm = lambda read : np.random.poisson(int(read),1)[0]
-'''
-"np_randnorm" is a function created to broadcast the "randnorm" function on a NumPy array.
-'''
-np_randnorm = np.frompyfunc(randnorm,1,1)
-
+def randpsn(read, ratio):
+    psn_read = np.random.poisson(round(read),1)[0]
+    if ratio > 1:
+        if psn_read < read/ratio:
+            return read
+        else:
+            return psn_read
+    elif 0 < ratio <= 1:
+        if psn_read > read/ratio:
+            return read
+        else:
+            return psn_read 
 
 class HiCPSN:
     '''
@@ -61,14 +68,14 @@ class HiCSampler:
     the results are copied to the lower triangular half. The diagonals with different offests are extracted using the 
     "kdiag" function. Random assignment of reads from the poisson distribution to these diagonal elements is performed 
     using the "np_randnorm" function. To remove the effects of the 1 added to the matrix, the matrix is subtracted by the
-    value of the "ratio".
+    vlue of the "ratio".
     '''
     def __init__(self, straw_result, chrom, chrsize, ratio=1.0, res=50000):
         self.hicpsn = HiCPSN(straw_result, chrom, ratio, res, chrsize)
         self.chrom = chrom
         self.res = res
         for col in range(self.hicpsn.ncols):
-            tmp = np_randnorm(np.diag(self.hicpsn.observed, col))
+            tmp = np.array(list(map(randpsn, np.diag(self.hicpsn.observed, col), repeat(ratio))))
             self.hicpsn.observed[kdiag(self.hicpsn.ncols, col)] = tmp
             #self.hicpsn.observed[kdiag(self.hicpsn.ncols, -col)] = tmp
         print("Random Poisson distribution assigned for chromosome: ", self.chrom)
@@ -109,7 +116,7 @@ if __name__ == '__main__':
     
     if args.hic_file == None and args.size:
         parser.error("Enter chromosome size file -s, if input is HiC file -i")
-
+        
     print("Entered Inputs: ", args.hic_file, args.sht_scr_dir, args.output, args.size, args.ratio, args.res)
     
     '''
@@ -131,7 +138,13 @@ if __name__ == '__main__':
                 print("Processing Chromosome: ", chrm[0])
             except:
                 print(f"Error in processing chromosome {chrm[0]}")
+            try:
+                del mixer
+            except:
+                print("No HiCSampler object intialized")
+    
             mixer = HiCSampler(result, chrm[0], ratio=float(args.ratio), res=int(args.res), chrsize=int(chrm[1]))
+            del result
             file = args.output+"/chr"+chrm[0]
 
             if args.gzip:
@@ -160,7 +173,12 @@ if __name__ == '__main__':
             chrsize = max(max(result0), max(result1))
             result.append(result0); result.append(result1); result.append(result2)
             print("Processing Chromosome: ", chrom)
+            try:
+                del mixer
+            except:
+                print("No HiCSampler object intialized")
             mixer = HiCSampler(result, chrom, ratio=float(args.ratio), res=int(args.res), chrsize=chrsize)
+            del result
             file = args.output+"/chr"+str(chrom)
 
             if args.gzip:
@@ -175,4 +193,3 @@ if __name__ == '__main__':
                         f.write('\n')
 
             print("Processed Chromosome: ", chrom)
-
