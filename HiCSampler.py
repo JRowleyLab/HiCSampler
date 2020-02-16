@@ -82,9 +82,9 @@ class HiCSampler:
             for col in range(self.hicpsn.ncols):
                 diag_ele = np.diag(self.hicpsn.observed, col)
                 expected = np.average(diag_ele)
-                diag_ele += (expected*ratio)
+                diag_ele = diag_ele + (expected*ratio)
                 tmp = np.array(list(map(randpsn, diag_ele, repeat(ratio), repeat(expected))))
-                tmp -= int(round((expected*ratio)))
+                tmp = tmp - int(round((expected*ratio)))
                 tmp = np.where(tmp < 0, 0, tmp)
                 self.hicpsn.observed[kdiag(self.hicpsn.ncols, col)] = tmp
                 #self.hicpsn.observed[kdiag(self.hicpsn.ncols, -col)] = tmp
