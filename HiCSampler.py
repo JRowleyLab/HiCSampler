@@ -3,7 +3,6 @@ import argparse
 import gzip
 import os
 from straw import straw
-from itertools import repeat
 import time
 
 def kdiag(mat_dim, offset):
