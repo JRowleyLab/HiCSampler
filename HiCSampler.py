@@ -21,18 +21,18 @@ def kdiag(mat_dim, offset):
 '''
 "randpsn" is a function used to create a poisson distribution, centered around the varaible "read".
 '''
-def randpsn(read, ratio, expected = 0):
-    psn_read = np.random.poisson(round(read),1)[0]
-    if ratio > 1:
-        if psn_read < (read/ratio) - expected:
-            return int(round(read))
-        else:
-            return psn_read
-    elif 0 < ratio <= 1:
-        if psn_read > read/ratio:
-            return int(round(read))
-        else:
-            return psn_read 
+randpsn = lambda read:np.random.poisson(int(round(read)),1)[0]
+
+def progressbar(total, j):
+    if j == 0:
+        print("#0", sep="", end="")
+    percent = round(((j+1)/total)*100)
+    if progressbar.check != percent:    
+        if 0 <= percent <= 10:
+            print(f"\b#{percent}", end="", sep="")
+        elif 10 < percent <= 100:
+            print(f"\b\b#{percent}", end="", sep="")
+        progressbar.check += 1
 
 class HiCPSN:
     '''
@@ -42,26 +42,32 @@ class HiCPSN:
     Each cell in the matrix is sclaed by the given "ratio".
     '''
     def __init__(self, straw_result, chrom, ratio, res, chrsize):
-        rowidxs = np.array(straw_result[0][:])/res
-        colidxs = np.array(straw_result[1][:])/res
+        self.rowidxs = np.array(straw_result[0][:])
+        self.colidxs = np.array(straw_result[1][:])
         self.scores = np.array(straw_result[2][:])
         self.nrows = int(chrsize/res)+1
         self.ncols = int(chrsize/res)+1
-        print("The size of the matrix is: ", self.nrows, self.ncols)
-        self.observed = np.zeros((self.nrows, self.ncols))
-        print("Intializing HiC Matrix")
-        start = time.time()
-        for ele in range(len(self.scores)):
-            self.observed[int(rowidxs[ele])][int(colidxs[ele])] = self.scores[ele]
-        stop = time.time()
-        print("HiC Matrix Intialized for chromosome: ", chrom)
-        print(f"Time taken (min): {(stop-start)/60}")
-        print("Scaling the HiC matrix with the value of ratio: ", ratio)
-        start = time.time()
-        self.observed = self.observed*ratio
-        stop = time.time()
-        print(f"Time taken for scaling the matrix with ratio {ratio} is (mins): {(stop-start)/60}")
-        del ele; del straw_result;
+        if ratio > 1:
+            self.rowidxs = self.rowidxs/res
+            self.colidxs = self.colidxs/res
+            print("The size of the matrix is: ", self.nrows, self.ncols)
+            self.observed = np.zeros((self.nrows, self.ncols))
+            print("Intializing HiC Matrix")
+            start = time.time()
+            progressbar.check = 0
+            length = len(self.scores)
+            for ele in range(length):
+                progressbar(length, ele)
+                self.observed[int(self.rowidxs[ele])][int(self.colidxs[ele])] = self.scores[ele]
+            stop = time.time()
+            print("\nHiC Matrix Intialized for chromosome: ", chrom)
+            print(f"Time taken (min): {(stop-start)/60}")
+            print("Scaling the HiC matrix with the value of ratio: ", ratio)
+            start = time.time()
+            self.observed = self.observed*ratio
+            stop = time.time()
+            print(f"Time taken for scaling the matrix with ratio {ratio} is (mins): {(stop-start)/60}")
+            del ele; del straw_result;
 
 class HiCSampler:
     '''
@@ -76,34 +82,42 @@ class HiCSampler:
         self.hicpsn = HiCPSN(straw_result, chrom, ratio, res, chrsize)
         self.chrom = chrom
         self.res = res
+        self.ratio = ratio
         if ratio > 1:
-            print("Assigning reads based on Poisson distribution")
+            print("Up-sampling reads based on Poisson distribution")
             start = time.time()
-            for col in range(self.hicpsn.ncols):
+            progressbar.check = 0
+            length = self.hicpsn.ncols
+            for col in range(length):
+                progressbar(length, col)
                 diag_ele = np.diag(self.hicpsn.observed, col)
                 expected = np.average(diag_ele)
-                diag_ele = diag_ele + (expected*ratio)
-                tmp = np.array(list(map(randpsn, diag_ele, repeat(ratio), repeat(expected))))
-                tmp = tmp - int(round((expected*ratio)))
-                tmp = np.where(tmp < 0, 0, tmp)
+                diag_ele = diag_ele + int(round(expected*ratio))
+                tmp = np.array(list(map(randpsn, diag_ele)))
+                tmp = tmp - int(round(expected*ratio))
+                diag_ele = diag_ele - int(round(expected*ratio))
+                tmp = np.where(tmp < 0, diag_ele, tmp)
                 self.hicpsn.observed[kdiag(self.hicpsn.ncols, col)] = tmp
                 #self.hicpsn.observed[kdiag(self.hicpsn.ncols, -col)] = tmp
             stop = time.time()
             print("Random Poisson distribution assigned for chromosome: ", self.chrom)
             print(f"Time taken (min): {(stop-start)/60}")
-        
+            del tmp; del diag_ele;
+            
         elif 0 < ratio <=1 :
-            print("Assigning reads based on Poisson distribution")
+            print("Down-sampling reads randomly")
             start = time.time()
-            for col in range(self.hicpsn.ncols):
-                diag_ele = np.diag(self.hicpsn.observed, col)
-                tmp = np.array(list(map(randpsn, diag_ele, repeat(ratio))))
-                self.hicpsn.observed[kdiag(self.hicpsn.ncols, col)] = tmp
-                #self.hicpsn.observed[kdiag(self.hicpsn.ncols, -col)] = tmp
+            progressbar.check = 0
+            length = len(self.hicpsn.scores)
+            for idx in range(length):
+                progressbar(length, idx)
+                rand_reads = np.random.random_sample(int(self.hicpsn.scores[idx]))
+                read_count = len(np.where(rand_reads <= ratio)[0])
+                self.hicpsn.scores[idx] = read_count
             stop = time.time()
-            print("Random Poisson distribution assigned for chromosome: ", self.chrom)
+            print("\nRandom reads assigned for chromosome: ", self.chrom)
             print(f"Time taken (min): {(stop-start)/60}")
-        del tmp; del diag_ele;
+            del rand_reads
     
     def readShortFormattedLine(self):
         '''
@@ -114,12 +128,20 @@ class HiCSampler:
         frag1=1; frag2=2;
         chr1=self.chrom; chr2=self.chrom
         str1=0; str2=0;
-        for col in range(self.hicpsn.ncols):
-            diag_cords = kdiag(self.hicpsn.ncols, col)
-            for ele in range(len(diag_cords[0])):
-                pos1 = diag_cords[0][ele]*self.res; pos2 = diag_cords[1][ele]*self.res; score = self.hicpsn.observed[diag_cords[0][ele]][diag_cords[1][ele]]
+        if self.ratio > 1:
+            for col in range(self.hicpsn.ncols):
+                diag_cords = kdiag(self.hicpsn.ncols, col)
+                for ele in range(len(diag_cords[0])):
+                    pos1 = diag_cords[0][ele]*self.res; pos2 = diag_cords[1][ele]*self.res; score = self.hicpsn.observed[diag_cords[0][ele]][diag_cords[1][ele]]
+                    if score < 1:
+                        continue
+                    yield '{0} {1} {2} {3} {4} {5} {6} {7} {8}'.format(str1, chr1, pos1, frag1, str2, chr2, pos2, frag2, score)
+        
+        elif 0 < self.ratio <= 1:
+            for idx in range(len(self.hicpsn.scores)):
+                pos1 = self.hicpsn.rowidxs[idx]; pos2 = self.hicpsn.colidxs[idx]; score = self.hicpsn.scores[idx]
                 if score < 1:
-                    continue
+                        continue
                 yield '{0} {1} {2} {3} {4} {5} {6} {7} {8}'.format(str1, chr1, pos1, frag1, str2, chr2, pos2, frag2, score)
 
 if __name__ == '__main__':
@@ -138,7 +160,7 @@ if __name__ == '__main__':
     if args.hic_file == None and args.size:
         parser.error("Enter chromosome size file -s, if input is HiC file -i")
         
-    print("Entered Inputs....HiC file: {}, Short score format directory: {}, Output directory: {}, ratio: {}, Chromosome size file: {}, Resolution: {}, gzipped: {}".format(args.hic_file, args.sht_scr_dir, args.output, args.ratio, args.size, args.ratio, args.gzip))
+    print("Entered Inputs....HiC file: {}, Short score format directory: {}, Output directory: {}, ratio: {}, Chromosome size file: {}, Resolution: {}, gzipped: {}".format(args.hic_file, args.sht_scr_dir, args.output, args.ratio, args.size, args.res, args.gzip))
     
     '''
     To parse through the chromosomes in .size files.
