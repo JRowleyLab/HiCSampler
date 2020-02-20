@@ -99,7 +99,7 @@ class HiCSampler:
                 self.hicpsn.observed[kdiag(self.hicpsn.ncols, col)] = tmp
                 #self.hicpsn.observed[kdiag(self.hicpsn.ncols, -col)] = tmp
             stop = time.time()
-            print("Random Poisson distribution assigned for chromosome: ", self.chrom)
+            print("\nRandom Poisson distribution assigned for chromosome: ", self.chrom)
             print(f"Time taken (min): {(stop-start)/60}")
             del tmp; del diag_ele;
             
