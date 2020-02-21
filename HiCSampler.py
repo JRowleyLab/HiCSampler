@@ -206,6 +206,7 @@ if __name__ == '__main__':
             stop = time.time()
             print(f"Time taken for writing short score format file (mins): {(stop-start)/60}")
             print("Processed Chromosome: ", chrm[0])
+            print("\n")
     
     elif args.sht_scr_dir:
         for chrfile in os.listdir(args.sht_scr_dir):
@@ -246,4 +247,4 @@ if __name__ == '__main__':
             stop = time.time()
             print(f"Time taken for writing short score format file (mins): {(stop-start)/60}")
             print("Processed Chromosome: ", chrom)
-
+            print("\n")
