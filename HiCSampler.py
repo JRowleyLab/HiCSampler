@@ -91,10 +91,10 @@ class HiCSampler:
                 progressbar(length, col)
                 diag_ele = np.diag(self.hicpsn.observed, col)
                 expected = np.average(diag_ele)
-                diag_ele = diag_ele + int(round(expected*ratio))
+                diag_ele = diag_ele + int(round(expected))
                 tmp = np.array(list(map(randpsn, diag_ele)))
-                tmp = tmp - int(round(expected*ratio))
-                diag_ele = diag_ele - int(round(expected*ratio))
+                tmp = tmp - int(round(expected))
+                diag_ele = diag_ele - int(round(expected))
                 tmp = np.where(tmp < 0, diag_ele, tmp)
                 self.hicpsn.observed[kdiag(self.hicpsn.ncols, col)] = tmp
                 #self.hicpsn.observed[kdiag(self.hicpsn.ncols, -col)] = tmp
